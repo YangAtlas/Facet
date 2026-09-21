@@ -10,7 +10,7 @@ const components: ComponentItem[] = [
   { id:'task',syntax:'[ ] 空格',label:'待办清单',description:'记录下一步行动',group:'基础',icon:'tasks',aliases:['todo','check'],block:()=>block('taskList',{},[block('taskItem',{checked:false},[p()])]) },
   { id:'quote',syntax:'> 空格',label:'引用',description:'留下一段值得记住的话',group:'基础',icon:'quote-left',aliases:['quote'],block:()=>block('blockquote',{},[p()]) },
   { id:'divider',syntax:'---',label:'分隔线',description:'为内容留一个停顿',group:'基础',icon:'minus',aliases:['hr'],block:()=>block('horizontalRule') },
-  ...Object.entries(variants).map(([key,v])=>({id:key,label:key==='highlight'?'重点段落':key==='custom'?'自定义卡片':v.title,description:({info:'背景、定义与阅读提示',tip:'方法、经验与实用建议',warning:'前提与需要注意的事项',important:'关键结论与核心信息',reflection:'观察、假设与进一步思考'} as Record<string,string>)[key] ?? '用一个卡片承载想法',group:['info','tip','warning','important','reflection','highlight','custom'].includes(key)?'提示框':'科研',icon:v.icon||'highlighter',aliases:[key,...(key==='important'?['imp']:key==='experiment'?['exp']:[])],variant:key,block:()=>block('callout',{variant:key,...v},[p()])})),
+  ...Object.entries(variants).map(([key,v])=>({id:key,label:key==='highlight'?'重点段落':key==='custom'?'自定义卡片':v.title,description:({info:'背景、定义与阅读提示',tip:'方法、经验与实用建议',warning:'前提与需要注意的事项',important:'关键结论与核心信息',reflection:'观察、假设与进一步思考'} as Record<string,string>)[key] ?? '用一个卡片承载想法',group:'提示框',icon:v.icon||'highlighter',aliases:[key,...(key==='important'?['imp']:key==='experiment'?['exp']:[])],variant:key,block:()=>block('callout',{variant:key,...v},[p()])})),
   {id:'equation',label:'公式',description:'LaTeX 输入与实时渲染',group:'多媒体',icon:'square-root-alt',aliases:['eq','math','公式'],action:'equation'},
   {id:'image',label:'图片',description:'插入本地图片或粘贴截图',group:'多媒体',icon:'image',aliases:['img','figure'],action:'image'},
   {id:'table',label:'表格',description:'选择行列后插入三线表',group:'多媒体',icon:'table',aliases:['table'],action:'table'},
@@ -25,4 +25,4 @@ const components: ComponentItem[] = [
   {id:'toc',label:'目录',description:'自动汇总标题和页码',group:'页面',icon:'list',aliases:['toc','contents'],block:()=>block('tableOfContents')},
 ]
 export const registry:ComponentItem[]=components.map(item=>({...item,syntax:[item.syntax?.startsWith('/')?null:item.syntax,`/${item.aliases[0]}`].filter(Boolean).join(' · ')}))
-export function searchComponents(query: string) { const q=query.trim().toLowerCase(); return registry.filter(x=>`${x.label} ${x.description} ${x.aliases.join(' ')}`.toLowerCase().includes(q)) }
+export function searchComponents(query: string) { const q=query.trim().toLowerCase(); return registry.filter(x=>x.id!=='paragraph').filter(x=>`${x.label} ${x.description} ${x.aliases.join(' ')}`.toLowerCase().includes(q)) }

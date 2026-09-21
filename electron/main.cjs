@@ -1,18 +1,28 @@
-const {app,BrowserWindow,ipcMain,dialog,shell,Menu}=require('electron')
+const {app,BrowserWindow,ipcMain,dialog,shell,Menu,clipboard}=require('electron')
 const path=require('node:path'),fs=require('node:fs/promises'),crypto=require('node:crypto')
 const {atomicWrite,hash}=require('./storage.cjs')
-let main,closing=false,closeRequested=false
+let main,closing=false,closeRequested=false,rendererReady=false
+const pendingFiles=process.argv.filter(value=>/\.(facet|bak)$/i.test(value))
+async function deliverFiles(){if(!rendererReady||!main)return;for(const file of pendingFiles.splice(0)){try{main.webContents.send('document:opened',await readFile(file))}catch(e){main.webContents.send('document:opened',{error:e.message})}}}
+const workspace=require('./workspace.cjs')
+const workspacePath=()=>path.join(app.getPath('userData'),'workspace.json')
 const handles=new Map(),outputs=new Map()
 const cleanName=s=>String(s||'未命名文档').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,100)
 const settingsPath=()=>path.join(app.getPath('userData'),'recent.json')
 const recoveryPath=id=>{if(!/^[\w-]{1,80}$/.test(id))throw new Error('无效文档标识');return path.join(app.getPath('userData'),'recovery',`${id}.facet`)}
 const readRecent=async()=>{try{return JSON.parse(await fs.readFile(settingsPath(),'utf8'))}catch{return []}}
 async function addRecent(file){const r=await readRecent();await fs.writeFile(settingsPath(),JSON.stringify([file,...r.filter(x=>x!==file)].slice(0,12)))}
-async function readFile(file){const stat=await fs.stat(file);if(stat.size>100*1024*1024)throw new Error('文档超过 100 MB');const bytes=await fs.readFile(file);const token=crypto.randomUUID();handles.set(token,{file,hash:hash(bytes)});await addRecent(file);return {token,name:path.basename(file),bytes:[...bytes]}}
+async function readFile(file){const stat=await fs.stat(file);if(stat.size>100*1024*1024)throw new Error('文档超过 100 MB');const bytes=await fs.readFile(file);const token=crypto.randomUUID();handles.set(token,{file,hash:hash(bytes)});await addRecent(file);if(!workspace.root||path.relative(workspace.root,file).startsWith('..'))await workspace.choose(path.dirname(file),workspacePath());return {token,name:path.basename(file),directory:path.dirname(file),path:file,bytes:[...bytes]}}
 function register(channel,handler){ipcMain.handle(channel,async(event,...args)=>{if(event.sender!==main.webContents)throw new Error('非法调用来源');try{return await handler(...args)}catch(e){return {error:e.message||String(e)}}})}
 function setupIPC(){
+  register('workspace:choose',async()=>{const result=await dialog.showOpenDialog(main,{properties:['openDirectory']});return result.canceled?null:workspace.choose(result.filePaths[0],workspacePath())})
+  register('workspace:list',relative=>workspace.list(relative||''))
+  register('workspace:open',relative=>readFile(workspace.resolve(relative)))
   register('document:open',async recentIndex=>{if(Number.isInteger(recentIndex)){const recent=await readRecent();if(!recent[recentIndex])throw new Error('最近文档不存在');return readFile(recent[recentIndex])}const selected=await dialog.showOpenDialog(main,{filters:[{name:'Facet 文档',extensions:['facet','bak']}],properties:['openFile']});if(selected.canceled)return null;return readFile(selected.filePaths[0])})
   register('document:recent',async()=> (await readRecent()).map((p,i)=>({index:i,name:path.basename(p),directory:path.dirname(p)})))
+  register('document:forget',async index=>{const recent=await readRecent();await fs.writeFile(settingsPath(),JSON.stringify(recent.filter((_,i)=>i!==index)));return {ok:true}})
+  register('document:reveal',async index=>{const recent=await readRecent();if(recent[index])shell.showItemInFolder(recent[index])})
+  register('clipboard:read',()=>({text:clipboard.readText(),html:clipboard.readHTML(),image:clipboard.readImage().isEmpty()?'':clipboard.readImage().toDataURL()}))
   register('document:save',async({token,name,bytes,saveAs})=>{
     const data=Buffer.from(bytes);if(data.length>100*1024*1024)throw new Error('文档过大')
     let handle=handles.get(token),file=handle?.file
@@ -20,10 +30,10 @@ function setupIPC(){
     const result=await atomicWrite(file,data,handle?.hash)
     if(result.conflict)return {conflict:true}
     const nextToken=token&&!saveAs?token:crypto.randomUUID();handles.set(nextToken,{file,hash:result.hash});await addRecent(file)
-    return {token:nextToken,name:path.basename(file)}
+    if(!workspace.root)await workspace.choose(path.dirname(file),workspacePath());return {token:nextToken,name:path.basename(file),directory:path.dirname(file),path:file}
   })
-  register('document:recovery',async({id,bytes})=>{await atomicWrite(recoveryPath(id),Buffer.from(bytes));return {ok:true}})
-  register('document:recoveries',async()=>{const dir=path.join(app.getPath('userData'),'recovery');try{const names=await fs.readdir(dir);const entries=await Promise.all(names.filter(n=>n.endsWith('.facet')).map(async n=>({id:n.slice(0,-6),modified:(await fs.stat(path.join(dir,n))).mtimeMs})));return entries.sort((a,b)=>b.modified-a.modified)}catch{return []}})
+  register('document:recovery',async({id,bytes,name})=>{const file=recoveryPath(id);await atomicWrite(file,Buffer.from(bytes));await fs.writeFile(file+'.json',JSON.stringify({name:String(name||id)}));return {ok:true}})
+  register('document:recoveries',async()=>{const dir=path.join(app.getPath('userData'),'recovery');try{const names=await fs.readdir(dir);const entries=await Promise.all(names.filter(n=>n.endsWith('.facet')).map(async n=>{let name=n.slice(0,-6);try{name=JSON.parse(await fs.readFile(path.join(dir,n)+'.json','utf8')).name||name}catch{}return {id:n.slice(0,-6),name,modified:(await fs.stat(path.join(dir,n))).mtimeMs}}));return entries.sort((a,b)=>b.modified-a.modified)}catch{return []}})
   register('document:recover',async id=>({bytes:[...await fs.readFile(recoveryPath(id))]}))
   register('export:archive',async({name,bytes})=>{const result=await dialog.showSaveDialog(main,{defaultPath:`${cleanName(name)}-latex.zip`,filters:[{name:'LaTeX 源码包',extensions:['zip']}]});if(result.canceled)return null;await atomicWrite(result.filePath,Buffer.from(bytes));const token=crypto.randomUUID();outputs.set(token,result.filePath);return {token,name:path.basename(result.filePath)}})
   register('export:pdf',async({name,html,pageCount})=>{
@@ -43,21 +53,28 @@ function setupIPC(){
       await atomicWrite(result.filePath,pdf);const token=crypto.randomUUID();outputs.set(token,result.filePath);return {token,name:path.basename(result.filePath)}
     }finally{clearTimeout(timer);if(!win.isDestroyed())win.destroy();await fs.rm(tempDir,{recursive:true,force:true})}
   })
-  register('link:open',async value=>{if(typeof value!=='string')return;const url=new URL(value);if(['https:','http:','mailto:'].includes(url.protocol))await shell.openExternal(url.href)})
+  register('link:open',async value=>{if(typeof value!=='string')return;const url=new URL(value);if(['https:','http:','mailto:','tel:'].includes(url.protocol))await shell.openExternal(url.href)})
   register('output:open',async token=>{const p=outputs.get(token);if(p)await shell.openPath(p)})
   register('output:reveal',token=>{const p=outputs.get(token);if(p)shell.showItemInFolder(p)})
+  ipcMain.on('document:ready',event=>{if(event.sender===main.webContents){rendererReady=true;void deliverFiles()}})
   ipcMain.on('app:close-ready',event=>{if(event.sender===main.webContents){closing=true;main.close()}})
   ipcMain.on('app:close-cancel',()=>{closeRequested=false})
 }
 function createWindow(){
+  rendererReady=false
   main=new BrowserWindow({width:1460,height:960,minWidth:900,minHeight:640,title:'Facet',backgroundColor:'#f5f4f0',titleBarStyle:process.platform==='darwin'?'hiddenInset':'default',autoHideMenuBar:process.platform!=='darwin',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}})
   main.webContents.setWindowOpenHandler(()=>({action:'deny'}))
   main.webContents.on('will-navigate',e=>e.preventDefault())
   const dev=process.env.FACET_DEV_URL
   if(dev&&/^http:\/\/127\.0\.0\.1:\d+$/.test(dev)) main.loadURL(dev);else main.loadFile(path.join(__dirname,'../dist/index.html'))
   main.on('close',e=>{if(!closing){e.preventDefault();if(!closeRequested){closeRequested=true;main.webContents.send('app:closing')}}})
-  main.on('closed',()=>{main=null})
+  main.on('closed',()=>{main=null;rendererReady=false})
+  main.webContents.on('context-menu',(_event,params)=>{if(params.isEditable&&params.inputFieldType==='plainText')Menu.buildFromTemplate([{role:'cut',label:'剪切'},{role:'copy',label:'复制'},{role:'paste',label:'粘贴'},{role:'pasteAndMatchStyle',label:'粘贴为纯文本'},{role:'selectAll',label:'全选'}]).popup({window:main})})
 }
-app.whenReady().then(()=>{setupIPC();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Facet',submenu:[{role:'about'},{type:'separator'},{role:'quit'}]},{label:'编辑',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'窗口',submenu:[{role:'minimize'},{role:'zoom'}]}]));createWindow();app.on('activate',()=>{if(!main){closing=false;closeRequested=false;createWindow()}})})
+if(!app.requestSingleInstanceLock())app.quit()
+else {
+app.on('second-instance',(_event,argv)=>{pendingFiles.push(...argv.filter(value=>/\.(facet|bak)$/i.test(value)));if(main){if(main.isMinimized())main.restore();main.focus();void deliverFiles()}})
+app.whenReady().then(async()=>{await workspace.restore(workspacePath());setupIPC();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Facet',submenu:[{role:'about'},{type:'separator'},{role:'quit'}]},{label:'编辑',submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'窗口',submenu:[{role:'minimize'},{role:'zoom'}]}]));createWindow();app.on('activate',()=>{if(!main){closing=false;closeRequested=false;createWindow()}})})
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit()})
-app.on('open-file',async(e,file)=>{e.preventDefault();if(main){try{main.webContents.send('document:opened',await readFile(file))}catch{}}})
+app.on('open-file',(e,file)=>{e.preventDefault();pendingFiles.push(file);void deliverFiles()})
+}

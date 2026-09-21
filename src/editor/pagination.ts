@@ -38,8 +38,9 @@ export class Paginator {
       const fullText=n.textContent
       if(best<fullText.length && /[\uD800-\uDBFF]/.test(fullText[best-1]??'')) best--
       if(best<1) return null
-      const left={...node,content:n.content.cut(0,best).toJSON()??[]}
-      const right={...node,attrs:{...node.attrs,continuation:true,fragmentOffset:(Number(node.attrs?.fragmentOffset)||0)+best},content:n.content.cut(best).toJSON()??[]}
+      if(node.type==='codeBlock'){const boundary=fullText.lastIndexOf('\n',best-1)+1;if(boundary>0)best=boundary}
+      const left={...node,attrs:{...node.attrs,...(node.type==='codeBlock'?{codeContinues:true}:{})},content:n.content.cut(0,best).toJSON()??[]}
+      const right={...node,attrs:{...node.attrs,continuation:true,...(node.type==='codeBlock'?{codeLineStart:(Number(node.attrs?.codeLineStart)||1)+(fullText.slice(0,best).match(/\n/g)?.length||0)}:{}),fragmentOffset:(Number(node.attrs?.fragmentOffset)||0)+best},content:n.content.cut(best).toJSON()??[]}
       if(this.height(left)<40 && available<80) return null
       return [left,right]
     }
@@ -63,9 +64,9 @@ export class Paginator {
     }
     if(node.type==='table') {
       const rows=node.content??[]
-      const headers=rows.filter(row=>(row.content??[]).every(c=>c.type==='tableHeader'))
+      const firstBody=rows.findIndex(row=>(row.content??[]).some(c=>c.type!=='tableHeader'));const headers=rows.slice(0,firstBody<0?rows.length:firstBody)
       let best=0
-      for(let i=1;i<rows.length;i++){if(this.height({...node,content:rows.slice(0,i)})<=available) best=i;else break}
+      for(let i=1;i<rows.length;i++){if(rows.slice(0,i).some((row,r)=>(row.content??[]).some(c=>r+Number(c.attrs?.rowspan||1)>i)))continue;if(this.height({...node,content:rows.slice(0,i)})<=available) best=i;else break}
       if(best<=headers.length || best>=rows.length) return null
       return [{...node,content:rows.slice(0,best)},{...node,attrs:{...node.attrs,continuation:true},content:[...headers.map(h=>({...h,attrs:{...h.attrs,layoutRepeat:true}})),...rows.slice(best)]}]
     }

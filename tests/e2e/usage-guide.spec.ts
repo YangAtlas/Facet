@@ -2,7 +2,7 @@ import { test,expect } from '@playwright/test'
 import { mkdir,writeFile } from 'node:fs/promises'
 test('usage guide covers every component and exports both PDF layouts',async({page,browser})=>{
  test.setTimeout(120000)
- await page.goto('/');await page.waitForFunction(()=>window.__facet?.editor);await page.evaluate(()=>document.fonts.ready)
+ await page.addInitScript(()=>localStorage.setItem('facet-guide-seen','true'));await page.goto('/');await page.waitForFunction(()=>window.__facet?.editor);await page.evaluate(()=>document.fonts.ready)
  const coverage=await page.evaluate(async()=>{
   const guidePath='/scripts/usage-guide.ts',modelPath='/src/core/model.ts',registryPath='/src/core/registry.ts'
   const {usageGuide}=await import(/* @vite-ignore */ guidePath),{walk}=await import(/* @vite-ignore */ modelPath),{registry}=await import(/* @vite-ignore */ registryPath)
@@ -44,7 +44,7 @@ test('usage guide covers every component and exports both PDF layouts',async({pa
 })
 
 test('CodeSnap editing keeps code intact through pagination and export',async({page})=>{
- await page.goto('/');await page.waitForFunction(()=>window.__facet?.editor)
+ await page.addInitScript(()=>localStorage.setItem('facet-guide-seen','true'));await page.goto('/');await page.waitForFunction(()=>window.__facet?.editor)
  await page.getByRole('button',{name:'多媒体',exact:true}).click();await page.locator('[data-component="code"]').click()
  const area=page.getByLabel('代码编辑区');const code='def hello():\n    return "Facet"\n\nprint(hello())'
  await area.fill(code);await expect(area).toHaveValue(code)

@@ -5,6 +5,7 @@ export async function pageSnapshot(editor:Editor,title:string) {
   await document.fonts.ready
   await Promise.all(Array.from(editor.view.dom.querySelectorAll('img')).map(i=>i.decode()))
   const root=editor.view.dom.cloneNode(true) as HTMLElement
+  root.querySelectorAll('mark.search-match').forEach(n=>n.replaceWith(...Array.from(n.childNodes)));root.querySelectorAll('.search-match,.search-active,.search-code-active').forEach(n=>n.classList.remove('search-match','search-active','search-code-active'))
   root.classList.add('document-content');root.removeAttribute('contenteditable');root.removeAttribute('tabindex')
   root.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'))
   root.querySelectorAll('.ProseMirror-selectednode').forEach(n=>n.classList.remove('ProseMirror-selectednode'))

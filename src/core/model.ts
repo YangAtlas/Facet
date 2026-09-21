@@ -8,7 +8,7 @@ export type Asset = { name: string; mime: string; data: string }
 export interface FacetDocument {
   format: 'facet'; version: 1; id: string; revision: number;
   metadata: { title: string; subtitle: string; author: string; authorUrl: string; coverAssetId?: string; institute: string; date: string };
-  page: { orientation?: PageOrientation; margin: number; header: string; footer: string; accent: string };
+  page: { orientation?: PageOrientation; tocDepth?: number; margin: number; header: string; footer: string; accent: string };
   content: Block[]; assets: Record<string, Asset>;
 }
 export const uid = () => crypto.randomUUID()
@@ -70,7 +70,7 @@ export function canonicalize(pages: Block[]): Block[] {
   walk(nodes, n => {
     if(n.type === 'text') return
     n.attrs = { ...n.attrs }
-    delete n.attrs.continuation; delete n.attrs.fragmentOffset; delete n.attrs.renderVersion; delete n.attrs.layoutRepeat
+    delete n.attrs.codeLineStart;delete n.attrs.codeContinues;delete n.attrs.continuation; delete n.attrs.fragmentOffset; delete n.attrs.renderVersion; delete n.attrs.layoutRepeat
     if(!n.attrs.id || seen.has(n.attrs.id)) n.attrs.id = uid()
     seen.add(n.attrs.id)
     if(n.type === 'image' && n.attrs.assetId) n.attrs.src = `asset:${n.attrs.assetId}`

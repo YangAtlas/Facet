@@ -5,6 +5,13 @@ import { renderMath } from './math'
 import { pageFormat, accentValue, variants, semanticItems, type Block, type FacetDocument } from './model'
 export const texEscape=(text:string)=>text.replace(/[\\{}$&#%_^~]/g,c=>({'\\':'\\textbackslash{}','{':'\\{','}':'\\}','$':'\\$','&':'\\&','#':'\\#','%':'\\%','_':'\\_','^':'\\textasciicircum{}','~':'\\textasciitilde{}'}[c]!))
 export async function latexArchive(doc:FacetDocument):Promise<Uint8Array> {
+  const assets={...doc.assets}
+  for(const [id,asset] of Object.entries(assets))if(asset.mime==='image/webp'){
+    const image=new Image();image.src='data:image/webp;base64,'+asset.data;await image.decode()
+    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;canvas.getContext('2d')!.drawImage(image,0,0)
+    assets[id]={...asset,mime:'image/png',data:canvas.toDataURL('image/png').split(',')[1]}
+  }
+  doc={...doc,assets}
   const zip=new JSZip();let codeIndex=0,insideColumn=false
   const customColors=new Map<string,string>()
   const texColor=(value:string)=>{if(!/^#[0-9a-f]{6}$/i.test(value))return value;const hex=value.slice(1).toUpperCase();if(!customColors.has(hex))customColors.set(hex,`facetcolor${customColors.size}`);return customColors.get(hex)!}
@@ -33,10 +40,10 @@ export async function latexArchive(doc:FacetDocument):Promise<Uint8Array> {
       case 'paragraph':return `${content(n)}\n`
       case 'heading':{const command=['section','subsection','subsubsection'][(a.level??1)-1];return `\\${command}${a.numbered?'':'*'}{${a.icon?`\\icon{${texEscape(a.icon)}}\\enspace `:''}${content(n)}}${!a.numbered&&a.toc!==false?`\n\\addcontentsline{toc}{${command}}{${content(n)}}`:''}`}
       case 'documentTitle':return '\\maketitle'
-      case 'tableOfContents':return '\\tableofcontents'
+      case 'tableOfContents':return `\\setcounter{tocdepth}{${doc.page.tocDepth??3}}\n\\tableofcontents`
       case 'pageBreak':return '\\clearpage'
       case 'horizontalRule':return '\\par\\noindent\\rule{\\linewidth}{0.4pt}\\par'
-      case 'blockquote':return `\\begin{quote}\n${children(n)}\n\\end{quote}`
+      case 'blockquote':return `\\begin{tcolorbox}[colback=${texColor(a.color||'darkblue')}!8!white,colframe=${texColor(a.color||'darkblue')},boxrule=0pt,leftrule=2pt,arc=0pt]\n${children(n)}\n\\end{tcolorbox}`
       case 'bulletList':case 'taskList':case 'semanticList':return `\\begin{itemize}\n${children(n)}\n\\end{itemize}`
       case 'orderedList':return `\\begin{enumerate}\n${children(n)}\n\\end{enumerate}`
       case 'listItem':return `\\item ${children(n)}`
@@ -54,7 +61,8 @@ export async function latexArchive(doc:FacetDocument):Promise<Uint8Array> {
       case 'subfigure':{const count=Math.max(1,Math.min(4,Number(a.columns)||2)),width=Math.max(.2,Math.min(1,Number(a.width??100)/100)),items=a.items??[];const rows=[];for(let i=0;i<items.length;i+=count)rows.push(items.slice(i,i+count).map((item:any,j:number)=>`\\begin{minipage}[t]{${((width/count)*.95).toFixed(3)}\\linewidth}\n${block({type:'image',attrs:{...item,width:100,caption:item.caption||`(${String.fromCharCode(97+i+j)})`}})}\n\\end{minipage}`).join('\\hfill\n'));return `\\begin{center}\n${rows.join('\\par\\medskip\n')}\n\\end{center}`}
       case 'table':{
         const columns=n.content?.[0]?.content??[],count=columns.length||1,grid=a.tableStyle==='grid'
-        const specs=columns.map(cell=>`>{${({left:'\\raggedright',center:'\\centering',right:'\\raggedleft'} as Record<string,string>)[cell.attrs?.textAlign||'left']}\\arraybackslash}p{${(.86/count).toFixed(3)}\\linewidth}`)
+        const widths=columns.map(cell=>Number(cell.attrs?.colwidth?.[0])||1),totalWidth=widths.reduce((a,b)=>a+b,0)
+        const specs=columns.map((cell,index)=>`>{${({left:'\\raggedright',center:'\\centering',right:'\\raggedleft'} as Record<string,string>)[cell.attrs?.textAlign||'left']}\\arraybackslash}p{${(.86*widths[index]/totalWidth).toFixed(3)}\\linewidth}`)
         const spec=grid?'|'+specs.join('|')+'|':specs.join('')
         const rows=(n.content??[]).map((row,index)=>{
           const header=(row.content??[]).every(cell=>cell.type==='tableHeader')

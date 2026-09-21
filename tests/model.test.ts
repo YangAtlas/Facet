@@ -54,3 +54,7 @@ it('persists landscape pages and accepts legacy portrait documents',async()=>{
  expect(await decodeDocument(await encodeDocument(legacy))).toEqual(legacy)
  expect(()=>validateDocument({...legacy,page:{...legacy.page,orientation:'unknown'}})).toThrow('页面方向')
 })
+
+it('WebP image assets survive archive round trips',async()=>{
+ const d=makeDocument(),id=uid();d.assets[id]={name:'figure.webp',mime:'image/webp',data:'UklGRg=='};d.content=[{type:'image',attrs:{id:uid(),assetId:id,src:'asset:'+id}}];expect(await decodeDocument(await encodeDocument(d))).toEqual(d)
+})

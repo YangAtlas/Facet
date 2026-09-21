@@ -39,16 +39,16 @@
 
 | 平台 | 下载 | 安装方式 |
 | --- | --- | --- |
-| Windows 10 / 11 · x64 | [安装版 `.exe`](https://github.com/YangAtlas/Facet/releases/download/v0.1.0/Facet-0.1.0-win-x64-setup.exe) | 运行安装向导，可选择安装目录 |
-| Windows 10 / 11 · x64 | [便携版 `.exe`](https://github.com/YangAtlas/Facet/releases/download/v0.1.0/Facet-0.1.0-win-x64-portable.exe) | 直接运行 |
-| macOS · Apple 芯片 | [Apple 芯片版 `.dmg`](https://github.com/YangAtlas/Facet/releases/download/v0.1.0/Facet-0.1.0-mac-arm64.dmg) | 打开后将 Facet 拖入 Applications |
-| macOS · Intel | [Intel 版 `.dmg`](https://github.com/YangAtlas/Facet/releases/download/v0.1.0/Facet-0.1.0-mac-x64.dmg) | 打开后将 Facet 拖入 Applications |
+| Windows 10 / 11 · x64 | [安装版 `.exe`](https://github.com/YangAtlas/Facet/releases/download/v0.1.3/Facet-0.1.3-win-x64-setup.exe) | 运行安装向导，可选择安装目录 |
+| Windows 10 / 11 · x64 | [便携版 `.exe`](https://github.com/YangAtlas/Facet/releases/download/v0.1.3/Facet-0.1.3-win-x64-portable.exe) | 直接运行 |
+| macOS · Apple 芯片 | [Apple 芯片版 `.dmg`](https://github.com/YangAtlas/Facet/releases/download/v0.1.3/Facet-0.1.3-mac-arm64.dmg) | 打开后将 Facet 拖入 Applications |
+| macOS · Intel | [Intel 版 `.dmg`](https://github.com/YangAtlas/Facet/releases/download/v0.1.3/Facet-0.1.3-mac-x64.dmg) | 打开后将 Facet 拖入 Applications |
 
 macOS 同时提供 ZIP 包，可在版本页面下载。首次运行的系统提示见下方[使用说明](#使用说明)。
 
 ## 开始书写
 
-1. **新建文档。** 选择 A4 竖版或 16:9 横版，在「页面设置」中填写标题、作者、封面和主题色。
+1. **新建文档。** 选择 A4 竖版或 16:9 横版，在「设置 → 封面」中填写标题、作者、封面和主题色。
 2. **搭好结构。** 用一级、二级标题组织章节，用三级标题划分将来分享时的主题。左侧大纲随内容更新。
 3. **插入组件。** 点击右侧组件卡片，或在新段落输入 `/` 搜索。试试 `/eq` 公式、`/insight` 洞见、`/table` 表格和 `/code` 代码。
 4. **保存与分享。** 按 `Ctrl+S`（Windows）或 `⌘S`（macOS）保存 `.facet`；通过右上角「导出」生成 PDF 或 LaTeX 源码包。
@@ -80,7 +80,7 @@ macOS 同时提供 ZIP 包，可在版本页面下载。首次运行的系统提
 - 当前安装包未进行 Apple Developer ID 签名、公证或 Windows 代码签名。macOS 如阻止打开，可在「系统设置 → 隐私与安全性」中查看该应用的「仍要打开」选项；Windows 如出现 SmartScreen 提示，确认文件来自本仓库的 Release 后，再选择「更多信息 → 仍要运行」。
 - 桌面版生成纸面 PDF 和 Beamer PDF 使用内置排版能力。编译导出的 LaTeX 源码包需要另行安装支持 XeLaTeX 的 TeX 环境；其分页与组件外观采用独立排版。
 - 超宽公式或超高的单个表格行可能需要手动拆分。导出前检查排版提示。
-- Windows 打开已有文档时，请在应用内选择「打开文档」；本版本的文件关联尚未处理双击 `.facet` 时传入的文件路径。
+- Windows 支持双击 `.facet` 文件打开，也可以使用应用内的「打开文档」或左侧文件树。
 - 工作文件保存在本机。建议定期保存 `.facet`，并将重要文档纳入自己的备份流程。便携版运行时也会在本机保存偏好与恢复草稿。
 
 ## 本地开发

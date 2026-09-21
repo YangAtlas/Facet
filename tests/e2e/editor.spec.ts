@@ -1,5 +1,5 @@
 import { test,expect } from '@playwright/test'
-test.beforeEach(async({page})=>{await page.goto('/');await page.waitForFunction(()=>window.__facet?.editor);await page.evaluate(()=>document.fonts.ready)})
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.setItem('facet-guide-seen','true'));await page.goto('/');await page.waitForFunction(()=>window.__facet?.editor);await page.evaluate(()=>document.fonts.ready)})
 test('A4 geometry and side panels do not change wrapping',async({page})=>{
   const before=await page.locator('.facet-page').first().evaluate(e=>({width:(e as HTMLElement).offsetWidth,height:(e as HTMLElement).offsetHeight,text:e.textContent}))
   expect(before.width).toBe(794);expect(before.height).toBe(1123)
@@ -39,7 +39,7 @@ test('manual page break and long table header repetition',async({page})=>{
   const rows=await page.evaluate(()=>window.__facet.getDocument().content.find((n:any)=>n.type==='table').content.length);expect(rows).toBe(60)
 })
 test('metadata changes appear on paper',async({page})=>{
-  await page.getByRole('button',{name:'页面设置',exact:true}).click();await page.getByLabel('文档标题',{exact:true}).fill('新的研究记录');await page.getByLabel('页眉',{exact:true}).fill('PROJECT ALPHA');await page.getByRole('button',{name:'完成',exact:true}).click()
+  await page.getByRole('button',{name:'设置',exact:true}).click();await page.getByLabel('文档标题',{exact:true}).fill('新的研究记录');await page.getByLabel('页眉',{exact:true}).fill('PROJECT ALPHA');await page.getByRole('button',{name:'完成',exact:true}).click()
   await expect(page.locator('.document-title h1')).toHaveText('新的研究记录');await expect(page.locator('.page-header').first()).toHaveText('PROJECT ALPHA')
 })
 test('slash inserts using the same registry',async({page})=>{
@@ -92,7 +92,7 @@ test('double columns edit independently, accept images and resize',async({page})
   const columns=page.locator('.ProseMirror .two-columns');await expect(columns).toHaveCount(1)
   await columns.locator('.column-content').first().locator('p').click();await page.keyboard.type('LEFT TEXT')
   await columns.locator('.column-content').nth(1).locator('p').click();await page.keyboard.type('RIGHT TEXT')
-  await page.getByRole('button',{name:'组件设置',exact:true}).click();await page.getByLabel('左栏宽度').fill('65');await page.getByRole('button',{name:'应用',exact:true}).click()
+  await page.locator('.columns-editor .column-content p').first().dblclick();await page.getByLabel('左栏宽度').fill('65');await page.getByRole('button',{name:'应用',exact:true}).click()
   await expect(columns).toHaveAttribute('data-ratio','65')
   await columns.locator('.column-content').nth(1).locator('p').click();await page.locator('[data-component="image"]').click()
   await page.locator('input[type=file]').nth(1).setInputFiles({name:'image.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==','base64')})
@@ -162,7 +162,7 @@ test('column divider drags and grid tables follow the theme',async({page})=>{
   const ratio=Number(await handle.getAttribute('aria-valuenow'))
   expect(await page.evaluate(()=>window.__facet.getDocument().content.find((n:any)=>n.type==='columns').attrs.ratio)).toBe(ratio)
   await page.evaluate(()=>window.__facet.editor.commands.focus('end'))
-  await page.getByRole('button',{name:'常用',exact:true}).click();await page.locator('[data-component="table"]').click()
+  await page.getByRole('button',{name:'收藏',exact:true}).click();await page.locator('[data-component="table"]').click()
   await page.getByLabel('新表格样式').selectOption('grid');await page.getByRole('button',{name:'插入表格',exact:true}).click()
   await expect(page.locator('.ProseMirror table')).toHaveAttribute('data-table-style','grid')
   await expect(page.locator('.ProseMirror th').first()).toHaveCSS('color','rgb(255, 255, 255)')
@@ -171,7 +171,7 @@ test('column divider drags and grid tables follow the theme',async({page})=>{
 
 test('component colors show swatches and custom colors survive export',async({page})=>{
   await page.locator('.ProseMirror .callout-title').first().click()
-  const dialog=page.getByRole('dialog',{name:'组件设置'})
+  const dialog=page.getByRole('dialog',{name:'编辑样式'})
   await expect(dialog.getByRole('button',{name:'学术蓝',exact:true}).locator('i')).toHaveCSS('background-color','rgb(18, 59, 120)')
   await dialog.getByLabel('自定义组件颜色').fill('#2e7799')
   await dialog.getByRole('button',{name:'应用',exact:true}).click()
@@ -191,7 +191,7 @@ test('new document offers portrait and landscape without changing insertion comm
   await page.getByRole('button',{name:'取消',exact:true}).click()
   expect(await page.evaluate(()=>window.__facet.getDocument().id)).toBe(id)
   await page.getByRole('button',{name:/新建文档/}).click();await page.getByRole('radio',{name:/横版/}).click();await page.getByRole('button',{name:'创建文档',exact:true}).click()
-  await expect(page.getByRole('dialog',{name:'文档与页面'})).toBeVisible()
+  await expect(page.getByRole('dialog',{name:'设置'})).toBeVisible()
   await page.getByLabel('文档标题',{exact:true}).fill('横版研究笔记')
   await page.getByRole('button',{name:'完成',exact:true}).click()
   expect(await page.evaluate(()=>window.__facet.getDocument().page.orientation)).toBe('landscape')
@@ -207,7 +207,7 @@ test('new document offers portrait and landscape without changing insertion comm
   const coverPreview=await page.context().newPage();await coverPreview.setContent(await page.evaluate(()=>window.__facet.exportHTML()));await coverPreview.evaluate(()=>document.fonts.ready)
   await coverPreview.locator('.facet-page').first().screenshot({path:'test-results/landscape-cover.png'});await coverPreview.close()
   await page.keyboard.press('Control+n');await expect(page.getByRole('dialog',{name:'新建文档'})).toBeVisible()
-  await page.getByRole('button',{name:'创建文档',exact:true}).click();await page.getByRole('button',{name:'完成',exact:true}).click()
+  await page.getByRole('button',{name:'创建文档',exact:true}).click();await page.getByRole('button',{name:'不保存',exact:true}).click();await page.getByRole('button',{name:'完成',exact:true}).click()
   expect(await page.evaluate(()=>window.__facet.getDocument().page.orientation)).toBe('portrait')
   expect(await page.locator('.facet-page').first().evaluate(e=>(e as HTMLElement).offsetWidth)).toBe(794)
 })
