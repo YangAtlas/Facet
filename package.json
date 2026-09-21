@@ -88,12 +88,18 @@
       "target": [
         "nsis",
         "portable"
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Facet-${version}-win-${arch}-setup.${ext}"
     },
-    "artifactName": "Facet-${version}-${os}-${arch}.${ext}"
-  }
+    "artifactName": "Facet-${version}-${os}-${arch}.${ext}",
+    "portable": {
+      "artifactName": "Facet-${version}-win-${arch}-portable.${ext}"
+    }
+  },
+  "packageManager": "pnpm@11.19.0"
 }

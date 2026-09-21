@@ -50,7 +50,7 @@ function setupIPC(){
   ipcMain.on('app:close-cancel',()=>{closeRequested=false})
 }
 function createWindow(){
-  main=new BrowserWindow({width:1460,height:960,minWidth:900,minHeight:640,title:'Facet',backgroundColor:'#f5f4f0',titleBarStyle:'hiddenInset',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}})
+  main=new BrowserWindow({width:1460,height:960,minWidth:900,minHeight:640,title:'Facet',backgroundColor:'#f5f4f0',titleBarStyle:process.platform==='darwin'?'hiddenInset':'default',autoHideMenuBar:process.platform!=='darwin',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}})
   main.webContents.setWindowOpenHandler(()=>({action:'deny'}))
   main.webContents.on('will-navigate',e=>e.preventDefault())
   const dev=process.env.FACET_DEV_URL
