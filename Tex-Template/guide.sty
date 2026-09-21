@@ -1,0 +1,159 @@
+% Adapted from phd-survival-guide by Xiaolong Luo (Aaron), MIT License.
+% See LICENSE and README.md for attribution and usage.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{guide}[2026/09/17 Reusable handbook styles]
+\RequirePackage[margin=1in,headheight=16pt]{geometry}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{enumitem}
+\RequirePackage{fontawesome5}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\RequirePackage{listings}
+\RequirePackage{fancyhdr}
+\RequirePackage{booktabs}
+\RequirePackage{tabularx}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{xparse}
+\RequirePackage{hyperref}
+\RequirePackage{bookmark}
+
+% Original palette, plus semantic aliases for everyday writing.
+\definecolor{darkblue}{RGB}{0,0,139}
+\definecolor{lightgray}{RGB}{240,240,240}
+\definecolor{harvardcrimson}{RGB}{165,28,48}
+\definecolor{emeraldgreen}{RGB}{0,155,119}
+\definecolor{royalpurple}{RGB}{102,51,153}
+\definecolor{goldenyellow}{RGB}{255,193,37}
+\colorlet{guideaccent}{darkblue}
+\colorlet{guidemuted}{black!55}
+\colorlet{guidesuccess}{emeraldgreen!70!black}
+\colorlet{guidewarning}{orange!75!black}
+\newcommand{\guidetheme}[1]{\colorlet{guideaccent}{#1}}
+
+\hypersetup{colorlinks=true,linkcolor=guideaccent,urlcolor=guideaccent,
+  citecolor=guideaccent,bookmarksnumbered=true,unicode=true}
+\setlength{\parskip}{0.45em}
+\setlength{\parindent}{0pt}
+\setlist{leftmargin=2em,itemsep=0.25em,topsep=0.4em,parsep=0pt}
+\setlist[enumerate,1]{label=\textcolor{guideaccent}{\arabic*.}}
+\@ifundefined{ctexset}{%
+  \RequirePackage{titlesec}
+  \titleformat{\section}{\Large\bfseries\color{guideaccent}}{\thesection}{1em}{}
+  \titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+}{%
+  \ctexset{section={format=\Large\bfseries\color{guideaccent}},
+    subsection={format=\large\bfseries},subsubsection={format=\normalsize\bfseries}}
+}
+% Title and running headers.
+\newcommand{\guide@subtitle}{}
+\newcommand{\guide@institute}{}
+\newcommand{\subtitle}[1]{\renewcommand{\guide@subtitle}{#1}}
+\newcommand{\institute}[1]{\renewcommand{\guide@institute}{#1}}
+\newcommand{\guideheader}[2]{\fancyhead[L]{\small\textcolor{guidemuted}{#1}}%
+  \fancyhead[R]{\small\textcolor{guidemuted}{#2}}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[R]{\small\textcolor{guidemuted}{\thepage}}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyfoot[R]{\small\textcolor{guidemuted}{\thepage}}}
+\renewcommand{\maketitle}{%
+  \thispagestyle{plain}
+  \begingroup\centering
+  {\LARGE\bfseries\color{guideaccent}\@title\par}
+  \ifx\guide@subtitle\@empty\else\vspace{0.55em}{\large\guide@subtitle\par}\fi
+  \vspace{1em}{\@author\par}
+  \ifx\guide@institute\@empty\else{\small\color{guidemuted}\guide@institute\par}\fi
+  \vspace{0.5em}{\small\color{guidemuted}\@date\par}
+  \vspace{0.9em}{\color{guideaccent}\hrule height 0.7pt}\endgroup
+  \vspace{1.2em}}
+
+% Font Awesome names: book, lightbulb, rocket, check, chart-line, etc.
+\NewDocumentCommand{\icon}{O{guideaccent} m}{\textcolor{#1}{\faIcon{#2}}}
+\NewDocumentCommand{\emoji}{O{guideaccent} m}{\icon[#1]{#2}}
+\NewDocumentCommand{\iconsection}{s m m}{%
+  \IfBooleanTF{#1}{\section*{\texorpdfstring{\icon{#2}\enspace}{}#3}}%
+    {\section{\texorpdfstring{\icon{#2}\enspace}{}#3}}}
+\NewDocumentCommand{\iconsubsection}{s m m}{%
+  \IfBooleanTF{#1}{\subsection*{\texorpdfstring{\icon{#2}\enspace}{}#3}}%
+    {\subsection{\texorpdfstring{\icon{#2}\enspace}{}#3}}}
+\newcommand{\themecolor}[1]{\textcolor{guideaccent}{#1}}
+\newcommand{\important}[1]{\textcolor{harvardcrimson}{\textbf{#1}}}
+\newcommand{\success}[1]{\textcolor{guidesuccess}{#1}}
+\newcommand{\muted}[1]{\textcolor{guidemuted}{#1}}
+\newcommand{\highlight}[2][goldenyellow!30]{\begingroup
+  \setlength{\fboxsep}{2pt}\colorbox{#1}{\strut #2}\endgroup}
+\newcommand{\badge}[2][guideaccent]{\begingroup\setlength{\fboxsep}{3pt}%
+  \colorbox{#1!10}{\textcolor{#1!75!black}{\small\sffamily\strut #2}}\endgroup}
+\newcommand{\swatch}[1]{\colorbox{#1}{\rule{0pt}{1.1ex}\hspace{1.2em}}}
+\newcommand{\hexswatch}[1]{\colorbox[HTML]{#1}{\rule{0pt}{1.1ex}\hspace{1.2em}}}
+
+% Icon bullets, usable in an ordinary itemize environment.
+\newcommand{\gooditem}{\item[{\icon[green!70!black]{check}}]}
+\newcommand{\baditem}{\item[{\icon[red!70!black]{times}}]}
+\newcommand{\toolitem}{\item[{\icon[blue!70!black]{cog}}]}
+\newcommand{\ideaitem}{\item[{\icon[yellow!80!black]{lightbulb}}]}
+\newcommand{\warningitem}{\item[{\icon[orange]{exclamation-triangle}}]}
+\newcommand{\staritem}{\item[{\icon[goldenyellow]{star}}]}
+\newcommand{\arrowitem}{\item[{\icon[guideaccent]{arrow-right}}]}
+
+% Breakable callouts, including lists, equations and ordinary paragraphs.
+\tcbset{guidebase/.style={enhanced,breakable,boxrule=0.6pt,arc=2pt,
+  left=10pt,right=10pt,top=8pt,bottom=8pt,before skip=10pt,after skip=10pt,
+  fonttitle=\bfseries},
+  guidecolor/.style={colback=#1!4!white,colframe=#1!65!white,
+    colbacktitle=#1!10!white,coltitle=#1!65!black}}
+\newtcolorbox{guidebox}[3][guideaccent]{guidebase,guidecolor=#1,
+  title={\faIcon{#2}\enspace #3}}
+\newtcolorbox{infobox}[1][提示]{guidebase,guidecolor=guideaccent,
+  title={\faInfoCircle\enspace #1}}
+\newtcolorbox{tipbox}[1][建议]{guidebase,guidecolor=emeraldgreen,
+  title={\faLightbulb\enspace #1}}
+\newtcolorbox{warningbox}[1][注意]{guidebase,guidecolor=orange,
+  title={\faExclamationTriangle\enspace #1}}
+\newtcolorbox{importantbox}[1][重点]{guidebase,guidecolor=harvardcrimson,
+  title={\faExclamationCircle\enspace #1}}
+\newtcolorbox{reflectionbox}[1][思考]{guidebase,guidecolor=royalpurple,
+  title={\faBrain\enspace #1}}
+\newtcolorbox{highlightbox}{guidebase,colback=goldenyellow!20,
+  colframe=goldenyellow!60,boxrule=0pt}
+
+% Code environments. Use English inside code; captions may be Chinese.
+\lstdefinestyle{guidecode}{basicstyle=\ttfamily\small,columns=fullflexible,
+  keepspaces=true,breaklines=true,showstringspaces=false,tabsize=4,
+  aboveskip=1em,belowskip=0.7em,captionpos=b}
+\lstdefinestyle{pythonstyle}{style=guidecode,language=Python,
+  keywordstyle=\color{blue}\bfseries,stringstyle=\color{red},
+  commentstyle=\color{green!50!black}\itshape,backgroundcolor=\color{gray!5},
+  frame=single,rulecolor=\color{gray!30},numbers=left,
+  numberstyle=\tiny\color{gray},numbersep=8pt,xleftmargin=1.5em}
+\lstdefinestyle{bashstyle}{style=guidecode,language=bash,
+  keywordstyle=\color{royalpurple}\bfseries,commentstyle=\color{gray}\itshape,
+  backgroundcolor=\color{blue!5},frame=leftline,framerule=3pt,
+  rulecolor=\color{blue!50},numbers=none,xleftmargin=0.6em,tabsize=2}
+\lstdefinestyle{texstyle}{style=guidecode,language=[LaTeX]TeX,
+  keywordstyle=\color{guideaccent}\bfseries,commentstyle=\color{gray},
+  backgroundcolor=\color{gray!5},frame=single,rulecolor=\color{gray!25}}
+\lstnewenvironment{pythoncode}[1][]{\lstset{style=pythonstyle,#1}}{}
+\lstnewenvironment{bashcode}[1][]{\lstset{style=bashstyle,#1}}{}
+\lstnewenvironment{texcode}[1][]{\lstset{style=texstyle,#1}}{}
+\newcommand{\codefile}[2][pythonstyle]{\lstinputlisting[style=#1]{#2}}
+
+% Palettes transcribed from the source handbook; values keep source order.
+\newcommand{\definepalette}[2]{\@namedef{guide@palette@#1}{#2}}
+\newcommand{\palette}[1]{%
+  \@ifundefined{guide@palette@#1}{\PackageError{guide}{Unknown palette '#1'}%
+    {Use Blues, Viridis, Cividis, RdBu, PuOr, BrBG, Set1, OkabeIto or Dark2.}}%
+  {\begingroup\edef\guide@colors{\csname guide@palette@#1\endcsname}%
+    \@for\guide@hex:=\guide@colors\do{\hexswatch{\guide@hex}\hspace{1pt}}\endgroup}}
+\definepalette{Blues}{F7FBFF,DEEBF7,C6DBEF,9ECAE1,6BAED6,4292C6,2171B5,08519C,08306B}
+\definepalette{Viridis}{440154,482777,3F4A8A,31678E,26838F,1F9D8A,6CCE5A,B6DE2B,FDE725}
+\definepalette{Cividis}{00204D,00336F,39486A,575C6D,707173,8A8779,A69D75,C4B56C,E4CF5B,FFE945}
+\definepalette{RdBu}{B2182B,D6604D,F4A582,FDDBC7,F7F7F7,D1E5F0,92C5DE,4393C3,2166AC}
+\definepalette{PuOr}{762A83,9970AB,C2A5CF,E7D4E8,F7F7F7,FDB863,E08214,B35806,7F3B08}
+\definepalette{BrBG}{543005,8C510A,BF812D,DFC27D,F6E8C3,C7EAE5,80CDC1,35978F,01665E,003C30}
+\definepalette{Set1}{E41A1C,377EB8,4DAF4A,984EA3,FF7F00,FFFF33,A65628,F781BF,999999}
+\definepalette{OkabeIto}{E69F00,56B4E9,009E73,F0E442,0072B2,D55E00,CC79A7,000000}
+\definepalette{Dark2}{1B9E77,D95F02,7570B3,E7298A,66A61E,E6AB02,A6761D,666666}
+\endinput

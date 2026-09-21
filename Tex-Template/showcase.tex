@@ -1,0 +1,220 @@
+% !TeX program = xelatex
+\documentclass[11pt,a4paper,fontset=fandol]{ctexart}
+\usepackage{guide}
+\title{Guide · 样式与命令手册}
+\subtitle{把精致的排版，变成简单的日常书写}
+\author{LaTeX 模板组件库}
+\institute{中文笔记 · 技术手册 · 项目说明}
+\date{2026 年 9 月}
+\guideheader{Guide · 样式与命令手册}{Template / Tex}
+\begin{document}
+\maketitle
+\begin{infobox}[从 main.tex 开始]
+复制 \texttt{main.tex} 与 \texttt{guide.sty} 到新文件夹，修改标题和正文，
+使用 XeLaTeX 或 Tectonic 编译。本手册展示各项命令的实际排版效果。
+\end{infobox}
+\tableofcontents
+\vfill
+\muted{样式提取自 Xiaolong Luo (Aaron) 的 phd-survival-guide，遵循 MIT 许可。
+模板保留原作的主题配色、图标列表与代码样式，并封装常用提示框和中文排版。}
+
+\clearpage
+\iconsection{palette}{文字与配色}
+\iconsubsection{pen-fancy}{用颜色表达层次}
+普通正文用于叙述，\themecolor{主题色用于关键词}，
+\important{红色粗体用于重点}，\success{绿色用于完成状态}，
+\muted{灰色用于补充信息}。\highlight{黄色底纹}适合短语，
+\badge{进行中}和\badge[emeraldgreen]{已完成}适合状态标签。
+\begin{texcode}
+\themecolor{keyword}       \important{key point}
+\success{done}         \muted{additional note}
+\highlight{short phrase}
+\highlight[blue!10]{custom background}
+\badge{in progress}    \badge[emeraldgreen]{done}
+\textcolor{royalpurple}{custom text color}
+\end{texcode}
+\begin{highlightbox}
+较长的重点段落放入 \texttt{highlightbox}，正文会根据页面宽度自动换行。
+需要标题时，可以选择下一页的提示框。
+\end{highlightbox}
+\subsection{原作六色}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lll}
+\toprule
+色样 & 颜色名称 & RGB \\
+\midrule
+\swatch{darkblue} & \texttt{darkblue} & 0, 0, 139 \\
+\swatch{lightgray} & \texttt{lightgray} & 240, 240, 240 \\
+\swatch{harvardcrimson} & \texttt{harvardcrimson} & 165, 28, 48 \\
+\swatch{emeraldgreen} & \texttt{emeraldgreen} & 0, 155, 119 \\
+\swatch{royalpurple} & \texttt{royalpurple} & 102, 51, 153 \\
+\swatch{goldenyellow} & \texttt{goldenyellow} & 255, 193, 37 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\subsection{调整主题}
+导言区写入 \texttt{\textbackslash guidetheme\{royalpurple\}}，即可统一调整
+标题、默认图标、强调文字和链接。也可以先用
+\texttt{\textbackslash definecolor} 定义自己的颜色，再传给此命令。
+
+\clearpage
+\iconsection{icons}{图标与列表}
+\emoji{book} 书籍\quad \emoji{lightbulb} 想法\quad
+\emoji{rocket} 行动\quad \emoji{flask} 实验\quad
+\emoji{chart-line} 结果\quad \emoji{graduation-cap} 学术
+
+\emoji[harvardcrimson]{heart} 关怀\quad \emoji{code} 代码\quad
+\emoji{calendar-check} 日程\quad \emoji{users} 合作\quad
+\emoji{brain} 思考\quad \emoji{check-circle} 完成
+\begin{texcode}
+\emoji{lightbulb}
+\emoji[harvardcrimson]{heart}
+\iconsection{book}{Section title}
+\iconsubsection{flask}{Subsection title}
+\iconsection*{rocket}{Unnumbered title}
+\end{texcode}
+\muted{图标使用 Font Awesome 5 名称。\texttt{\textbackslash emoji} 与
+\texttt{\textbackslash icon} 等价；它们输出可以着色的矢量字形。
+带图标标题会在目录中保留图标，PDF 书签使用标题文字。}
+\subsection{七种语义列表}
+\begin{itemize}
+  \gooditem 已完成：数据整理和实验记录。
+  \baditem 待解决：一项尚未通过的验证。
+  \toolitem 工具：完成工作所需的资源。
+  \ideaitem 想法：值得进一步研究的假设。
+  \warningitem 注意：需要及时处理的问题。
+  \staritem 重点：最值得记住的结论。
+  \arrowitem 下一步：可以马上执行的行动。
+\end{itemize}
+\begin{texcode}
+\begin{itemize}
+  \gooditem Completed task.
+  \baditem Unresolved issue.
+  \toolitem Useful tool.
+  \ideaitem A new idea.
+  \warningitem Pay attention.
+  \staritem Key result.
+  \arrowitem Next action.
+\end{itemize}
+\end{texcode}
+
+\clearpage
+\iconsection{comment-dots}{提示框与重点段落}
+\begin{infobox}[信息 · infobox]
+用来解释背景、定义和阅读方式。
+\end{infobox}
+\begin{tipbox}[建议 · tipbox]
+用来记录可操作的方法、经验和改进建议。
+\end{tipbox}
+\begin{warningbox}[注意 · warningbox]
+用来标注前提、约束和需要读者关注的事项。
+\end{warningbox}
+\begin{importantbox}[重点 · importantbox]
+用来强调关键结论或需要优先处理的问题。
+\end{importantbox}
+\begin{reflectionbox}[思考 · reflectionbox]
+用来整理假设、观察和进一步讨论的问题。
+\end{reflectionbox}
+\begin{guidebox}[emeraldgreen]{check-circle}{自定义 · guidebox}
+自定义颜色、图标和标题；框内可以写段落、列表和公式。
+\end{guidebox}
+\begin{texcode}
+\begin{tipbox}[My suggestion]
+Write paragraphs or a list here.
+\end{tipbox}
+
+\begin{guidebox}[royalpurple]{brain}{Reflection}
+Write your idea here.
+\end{guidebox}
+\end{texcode}
+\muted{五种语义框的标题参数可省略，使用默认中文标题。所有提示框支持跨页。}
+
+\clearpage
+\iconsection{code}{代码与表格}
+\subsection{Python：行号与语法高亮}
+\begin{pythoncode}[caption={数据归一化示例}]
+def normalize(values):
+    # Keep experiment inputs comparable.
+    total = sum(values)
+    return [v / total for v in values]
+
+scores = normalize([2, 3, 5])
+print(scores)
+\end{pythoncode}
+\subsection{Bash：浅蓝背景与左侧强调线}
+\begin{bashcode}
+# Compile the document
+tectonic main.tex
+\end{bashcode}
+\subsection{三个可直接使用的环境}
+使用 \texttt{pythoncode}、\texttt{bashcode}、\texttt{texcode} 环境包围代码。
+可选参数传给 \texttt{listings}，例如 \texttt{[caption=示例,firstnumber=10]}。
+\begin{texcode}
+\begin{pythoncode}[caption={Example}]
+print("Hello, research!")
+\end{pythoncode}
+
+\codefile{analysis.py}
+\codefile[bashstyle]{run.sh}
+\end{texcode}
+\subsection{简洁的三线表}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{lXr}
+\toprule
+阶段 & 记录内容 & 状态 \\
+\midrule
+问题定义 & 明确目标、输入和预期输出 & \success{完成} \\
+方案设计 & 记录方法、假设和可验证的判断 & \themecolor{进行中} \\
+结果整理 & 汇总证据、结论和下一步行动 & \muted{待开展} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\muted{表格使用 \texttt{booktabs} 和 \texttt{tabularx}；图片使用
+\texttt{graphicx}，数学公式使用 \texttt{amsmath}，均已加载。}
+
+\clearpage
+\iconsection{swatchbook}{科研配色与快速定制}
+\subsection{原作九组色板}
+\begin{center}
+\renewcommand{\arraystretch}{1.55}
+\begin{tabular}{ll}
+\toprule
+名称 & 预览 \\
+\midrule
+\texttt{Blues} & \palette{Blues} \\
+\texttt{Viridis} & \palette{Viridis} \\
+\texttt{Cividis} & \palette{Cividis} \\
+\texttt{RdBu} & \palette{RdBu} \\
+\texttt{PuOr} & \palette{PuOr} \\
+\texttt{BrBG} & \palette{BrBG} \\
+\texttt{Set1} & \palette{Set1} \\
+\texttt{OkabeIto} & \palette{OkabeIto} \\
+\texttt{Dark2} & \palette{Dark2} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{texcode}
+\palette{Viridis}
+\swatch{emeraldgreen}
+\hexswatch{0072B2}
+\definepalette{Project}{234E70,009E73,E69F00}
+\palette{Project}
+\end{texcode}
+\subsection{新建文档的基本骨架}
+\begin{texcode}
+\documentclass[11pt,a4paper,fontset=fandol]{ctexart}
+\usepackage{guide}
+\title{My research notes}
+\subtitle{Questions, evidence and actions}
+\author{Your name}
+\date{\today}
+\guideheader{Research notes}{Project name}
+\begin{document}
+\maketitle
+\iconsection{book}{Introduction}
+Write your content here.
+\end{document}
+\end{texcode}
+\end{document}

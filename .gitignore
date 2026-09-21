@@ -1,0 +1,12 @@
+node_modules/
+.pnpm-store/
+dist/
+release/
+build/icon.iconset/
+test-results/
+playwright-report/
+output/
+.DS_Store
+*.log
+*.facet
+*.facet.bak
